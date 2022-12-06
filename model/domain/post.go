@@ -2,7 +2,7 @@ package domain
 
 type Post struct {
 	Id      int
-	imgLink string
+	ImgLink string
 	Title   string
 	Desc    string
 	UserId  int
