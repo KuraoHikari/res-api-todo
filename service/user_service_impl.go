@@ -31,7 +31,7 @@ func(service *UserServiceImpl)Create(ctx context.Context, request web.UserCreate
 
 	tx, err := service.DB.Begin()
 	helper.PanicError(err)
-	defer func(){
+	defer func(){ //defer helper.CommitRollback(tx)
 		err := recover()
 		if err != nil {
 			errRollback := tx.Rollback()
@@ -49,45 +49,49 @@ func(service *UserServiceImpl)Create(ctx context.Context, request web.UserCreate
 	}
 	user = service.UserRepository.Save(ctx, tx, user)
 
-	return  web.UserResponse{
+	return  web.UserResponse{ //return helper.ToUserResponse(user)
 		Id: user.Id,
 		Email: user.Email,
 		Type: user.Type,
 	}
 }
-func(service *UserServiceImpl)Update(ctx context.Context, request web.UserCreateRequest) web.UserResponse{
-	panic("err")
+func(service *UserServiceImpl)Update(ctx context.Context, request web.UserUpdateRequest) web.UserResponse{
+	tx, err :=service.DB.Begin()
+	helper.PanicError(err)
+	defer helper.CommitRollback(tx)
+	user, err := service.UserRepository.FindById(ctx, tx , request.Id)
+	helper.PanicError(err)
+	user.Type = request.Type
+	user = service.UserRepository.Update(ctx, tx, user)
+	return helper.ToUserResponse(user)
 }
 
 func(service *UserServiceImpl)Delete(ctx context.Context, userId int) {
-	panic("err")
+	tx, err :=service.DB.Begin()
+	helper.PanicError(err)
+	defer helper.CommitRollback(tx)
+	user, err := service.UserRepository.FindById(ctx, tx , userId)
+	helper.PanicError(err)
+	service.UserRepository.Delete(ctx, tx, user)
 }
 
 func(service *UserServiceImpl)FindById(ctx context.Context,  userId int) web.UserResponse {
 	tx, err :=service.DB.Begin()
 	helper.PanicError(err)
-
-	defer func(){
-		err := recover()
-		if err != nil {
-			errRollback := tx.Rollback()
-			helper.PanicError(errRollback)
-			panic(err)
-		} else {
-			errCommit := tx.Commit()
-			helper.PanicError(errCommit)
-		}
-	}()
-
+	defer helper.CommitRollback(tx)
 	user, err := service.UserRepository.FindById(ctx, tx , userId)
 	helper.PanicError(err)
-
-	return web.UserResponse{
-		Id: user.Id,
-		Email: user.Email,
-		Type: user.Type,
-	}
+	return helper.ToUserResponse(user)
 }
 func(service *UserServiceImpl)FindAll(ctx context.Context) []web.UserResponse {
-	panic("err")
+	tx, err :=service.DB.Begin()
+	helper.PanicError(err)
+	defer helper.CommitRollback(tx)
+	users := service.UserRepository.FindAll(ctx, tx )
+	var UserResponse []web.UserResponse
+
+	for _, user := range users{
+		UserResponse = append(UserResponse, helper.ToUserResponse(user))
+	}
+	return UserResponse
 }

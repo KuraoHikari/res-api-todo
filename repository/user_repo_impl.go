@@ -18,15 +18,20 @@ func NewUserRepositoryImpl() UserRepository {
 func (reposiory *UserRepositoryImpl) Save(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
 	SQL := "INSERT INTO user(email, password, type) VALUES(?, ?, ?)"
 	res, err := tx.ExecContext(ctx, SQL, user.Email, user.Password, user.Type) 
-	helper.PanicError(err)
+	if err != nil {//helper.PanicError(err)
+		panic(err)
+	}
+	
 	id, err := res.LastInsertId()
-	helper.PanicError(err)
+	if err != nil {//helper.PanicError(err)
+		panic(err)
+	}
 	user.Id = int(id)
 	return user
 }
 func (reposiory *UserRepositoryImpl) Update(ctx context.Context, tx *sql.Tx, user domain.User) domain.User {
-	SQL := "UPDATE user SET email = ?, type = ? WHERE id = ?"
-	_, err := tx.ExecContext(ctx, SQL, user.Email, user.Type, user.Id)
+	SQL := "UPDATE user SET type = ? WHERE id = ?"
+	_, err := tx.ExecContext(ctx, SQL, user.Type, user.Id)
 	helper.PanicError(err)
 	return user
 }
